@@ -6,6 +6,7 @@ import {
   streak,
 } from "./domain";
 import { Metric } from "./components";
+import { MathText } from "./MathText";
 export function Stats({
   sets,
   sessions,
@@ -179,7 +180,9 @@ export function Stats({
               <tbody>
                 {reviews.map((r) => (
                   <tr key={r.id}>
-                    <td>{r.term}</td>
+                    <td>
+                      <MathText text={r.term} />
+                    </td>
                     <td>{r.known ? "Known" : "Still learning"}</td>
                     <td>{r.interval} days</td>
                     <td>{new Date(r.date).toLocaleString()}</td>

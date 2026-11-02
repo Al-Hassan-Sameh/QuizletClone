@@ -25,6 +25,31 @@ async function create(page: Page) {
     page.getByRole("heading", { name: "Biology essentials", exact: true }),
   ).toBeVisible();
 }
+test("renders LaTeX in an imported-style study set", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Create a set", exact: true }).click();
+  await page.getByLabel("Title", { exact: true }).fill("Quantum notation");
+  await page.getByLabel("Term 1", { exact: true }).fill("State \\(\\psi\\)");
+  await page
+    .getByLabel("Definition 1", { exact: true })
+    .fill("Probability \\(|\\psi|^2\\)");
+  await page.getByLabel("Term 2", { exact: true }).fill("Energy \\(E\\)");
+  await page
+    .getByLabel("Definition 2", { exact: true })
+    .fill("Quantization \\(E=\\hbar\\omega\\)");
+  await page.getByRole("button", { name: "Save set", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Study Quantum notation", exact: true })
+    .click();
+  await expect(
+    page.locator(".card-face").first().locator(".katex"),
+  ).toHaveCount(1);
+  await page.getByRole("button", { name: "Flip flashcard" }).click();
+  await expect(page.locator(".card-back .katex")).toHaveCount(1);
+  await page.getByRole("button", { name: "Learn", exact: true }).click();
+  await page.getByRole("button", { name: "Start learn session" }).click();
+  await expect(page.locator(".question-panel h2 .katex")).toHaveCount(1);
+});
 test("set management, persistence and flashcard controls", async ({ page }) => {
   await create(page);
   await page.reload();
