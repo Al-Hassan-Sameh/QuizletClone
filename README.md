@@ -54,7 +54,7 @@ The Playwright config uses `/usr/bin/chromium` when available; otherwise run `np
 
 ## Study
 
-- **Flashcards:** click/Space to flip; arrows or buttons to navigate; shuffle, restart, status/due filters, fullscreen, and known/still-learning ratings. Finish a session to save its summary. Individual ratings save immediately.
+- **Flashcards:** click/Space to flip; arrows or buttons to navigate; shuffle, restart, status/due filters, fullscreen, and known/still-learning ratings. Long answers scroll from their beginning. **Full screen** beside Shuffle expands the reading area; use **Exit full screen** or Escape to return. Finish a session to save its summary. Individual ratings save immediately.
 - **Learn:** multiple choice, written answers, and true/false with immediate feedback, an automatic extra attempt for difficult cards, results, and missed-card retries.
 - **Test:** choose a question count and formats, submit all answers, review results, and retry missed cards. Missing answers are incorrect. One-definition sets fall back to written questions.
 - **Statistics:** actual session activity, weighted test accuracy, mastery, daily activity, local-calendar streaks, and session history.

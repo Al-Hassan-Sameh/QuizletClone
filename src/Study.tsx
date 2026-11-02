@@ -3,6 +3,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Maximize,
+  Minimize,
   Layers,
   Brain,
   GraduationCap,
@@ -57,9 +58,104 @@ export function Study({
   const [feedback, setFeedback] = useState<boolean | null>(null);
   const [retries, setRetries] = useState<Question[]>([]);
   const area = useRef<HTMLDivElement>(null);
+  const [nativeFullscreen, setNativeFullscreen] = useState(false);
+  const [focusMode, setFocusMode] = useState(false);
+  const expanded = nativeFullscreen || focusMode;
+  const frontFace = useRef<HTMLDivElement>(null);
+  const backFace = useRef<HTMLDivElement>(null);
   const ids = order.filter((id) => membership.includes(id));
   const card = s.cards.find(
     (c) => c.id === ids[Math.min(index, ids.length - 1)],
+  );
+  useEffect(() => {
+    frontFace.current?.scrollTo(0, 0);
+    backFace.current?.scrollTo(0, 0);
+    if (
+      document.activeElement === frontFace.current ||
+      document.activeElement === backFace.current
+    ) {
+      (flip ? backFace.current : frontFace.current)?.focus({
+        preventScroll: true,
+      });
+    }
+  }, [card?.id, flip, round]);
+  useEffect(() => {
+    const changed = () =>
+      setNativeFullscreen(document.fullscreenElement === area.current);
+    document.addEventListener("fullscreenchange", changed);
+    return () => document.removeEventListener("fullscreenchange", changed);
+  }, []);
+  useEffect(() => {
+    if (!focusMode) return;
+    const previous = document.body.style.overflow;
+    const previousFocus = document.activeElement as HTMLElement | null;
+    document.body.style.overflow = "hidden";
+    const keepFocus = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setFocusMode(false);
+      if (event.key !== "Tab") return;
+      const controls = Array.from(
+        area.current?.querySelectorAll<HTMLElement>(
+          'button:not(:disabled),select:not(:disabled),input:not(:disabled),textarea:not(:disabled),a[href],[tabindex="0"]',
+        ) ?? [],
+      ).filter(
+        (element) =>
+          element.getClientRects().length &&
+          !element.closest('[aria-hidden="true"]'),
+      );
+      const first = controls[0];
+      const last = controls.at(-1);
+      if (!first || !last) return;
+      if (
+        event.shiftKey &&
+        (document.activeElement === first ||
+          !area.current?.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        last.focus();
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === last ||
+          !area.current?.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    window.addEventListener("keydown", keepFocus);
+    return () => {
+      document.body.style.overflow = previous;
+      window.removeEventListener("keydown", keepFocus);
+      if (previousFocus?.isConnected)
+        previousFocus.focus({ preventScroll: true });
+    };
+  }, [focusMode]);
+  const toggleFullscreen = async () => {
+    if (document.fullscreenElement === area.current) {
+      await document.exitFullscreen();
+    } else if (focusMode) {
+      setFocusMode(false);
+    } else {
+      try {
+        if (!document.fullscreenEnabled || !area.current?.requestFullscreen) {
+          setFocusMode(true);
+          return;
+        }
+        await area.current.requestFullscreen();
+      } catch {
+        // Browsers without native fullscreen still get a full-window focus view.
+        setFocusMode(true);
+      }
+    }
+  };
+  const fullscreenButton = (
+    <button
+      className="secondary fullscreen-toggle"
+      aria-pressed={expanded}
+      onClick={() => void run(toggleFullscreen)}
+    >
+      {expanded ? <Minimize size={17} /> : <Maximize size={17} />}
+      {expanded ? "Exit full screen" : "Full screen"}
+    </button>
   );
   const move = (delta: number) => {
     setIndex((i) => Math.max(0, Math.min(ids.length - 1, i + delta)));
@@ -181,7 +277,13 @@ export function Study({
   const score =
     quiz?.filter((q, i) => grade(answers[i] || "", q.answer)).length || 0;
   return (
-    <div className="study-area" ref={area}>
+    <div
+      className={`study-area ${expanded ? "expanded" : ""} ${focusMode ? "focus-mode" : ""}`}
+      ref={area}
+      role={focusMode ? "dialog" : undefined}
+      aria-modal={focusMode || undefined}
+      aria-label={focusMode ? `Study ${s.title}` : undefined}
+    >
       <button className="text-button back" onClick={onBack}>
         <ChevronLeft size={16} />
         All study sets
@@ -195,18 +297,7 @@ export function Study({
               `${s.cards.length} cards. A little closer to knowing.`}
           </p>
         </div>
-        <button
-          className="icon-button"
-          aria-label="Full screen study"
-          onClick={() =>
-            run(async () => {
-              if (document.fullscreenElement) await document.exitFullscreen();
-              else await area.current?.requestFullscreen();
-            })
-          }
-        >
-          <Maximize size={20} />
-        </button>
+        {mode !== "Flashcards" && fullscreenButton}
       </div>
       <div className="study-tabs">
         {[
@@ -228,7 +319,7 @@ export function Study({
         ))}
       </div>
       {mode === "Flashcards" ? (
-        <>
+        <div className="flashcard-session">
           <div className="study-toolbar">
             <span>{Object.keys(seen).length} reviewed this session</span>
             <select
@@ -258,7 +349,8 @@ export function Study({
               <option value="known">Known cards</option>
             </select>
             <button
-              className="secondary"
+              className="secondary shuffle-control"
+              aria-label="Shuffle cards"
               onClick={() => {
                 setOrder(shuffle(order));
                 setIndex(0);
@@ -266,8 +358,9 @@ export function Study({
               }}
             >
               <Shuffle size={16} />
-              Shuffle
+              <span>Shuffle</span>
             </button>
+            {fullscreenButton}
             <button
               className="icon-button"
               aria-label="Restart session"
@@ -289,15 +382,43 @@ export function Study({
               </button>
             </div>
           ) : card ? (
-            <>
-              <button
-                key={`${card.id}-${round}`}
+            <div className="card-stage">
+              <div
                 className={`flashcard ${flip ? "flipped" : ""}`}
-                onClick={() => setFlip(!flip)}
-                aria-label="Flip flashcard"
+                onClick={(event) => {
+                  // Selecting text or dragging a scroll bar should not flip the card.
+                  if (window.getSelection()?.toString()) return;
+                  let target = event.target as HTMLElement | null;
+                  while (target && target !== event.currentTarget) {
+                    if (
+                      target.scrollHeight > target.clientHeight ||
+                      target.scrollWidth > target.clientWidth
+                    ) {
+                      const bounds = target.getBoundingClientRect();
+                      if (
+                        event.clientX >=
+                          bounds.left +
+                            target.clientLeft +
+                            target.clientWidth ||
+                        event.clientY >=
+                          bounds.top + target.clientTop + target.clientHeight
+                      )
+                        return;
+                    }
+                    target = target.parentElement;
+                  }
+                  setFlip(!flip);
+                }}
               >
-                <span className="flashcard-inner">
-                  <span className="card-face" aria-hidden={flip}>
+                <div className="flashcard-inner">
+                  <div
+                    className={`card-face ${card.term.length > 180 ? "long-content" : ""}`}
+                    ref={frontFace}
+                    role="region"
+                    aria-label="Flashcard term"
+                    tabIndex={flip ? -1 : 0}
+                    aria-hidden={flip}
+                  >
                     <small>TERM</small>
                     <strong>
                       <MathText text={card.term} />
@@ -305,8 +426,15 @@ export function Study({
                     <span>
                       Click or press Space to flip <RotateCcw size={13} />
                     </span>
-                  </span>
-                  <span className="card-face card-back" aria-hidden={!flip}>
+                  </div>
+                  <div
+                    className={`card-face card-back ${card.definition.length > 240 ? "long-content" : ""}`}
+                    ref={backFace}
+                    role="region"
+                    aria-label="Flashcard definition"
+                    tabIndex={flip ? 0 : -1}
+                    aria-hidden={!flip}
+                  >
                     <small>DEFINITION</small>
                     <strong>
                       <MathText text={card.definition} />
@@ -317,9 +445,9 @@ export function Study({
                       </em>
                     )}
                     <span>Click to see the term</span>
-                  </span>
-                </span>
-              </button>
+                  </div>
+                </div>
+              </div>
               <div className="flash-navigation">
                 <button
                   className="circle-button"
@@ -332,6 +460,14 @@ export function Study({
                 <strong>
                   {Math.min(index + 1, ids.length)} <span>/ {ids.length}</span>
                 </strong>
+                <button
+                  className="secondary flip-control"
+                  aria-label="Flip flashcard"
+                  onClick={() => setFlip(!flip)}
+                >
+                  <RotateCcw size={15} />
+                  Flip card
+                </button>
                 <button
                   className="circle-button"
                   aria-label="Next card"
@@ -372,7 +508,7 @@ export function Study({
               >
                 Finish session <CheckCircle2 size={16} />
               </button>
-            </>
+            </div>
           ) : (
             <div className="empty">
               <BookOpen size={32} />
@@ -382,7 +518,7 @@ export function Study({
               </p>
             </div>
           )}
-        </>
+        </div>
       ) : !quiz ? (
         <section className="panel quiz-config">
           <span className="empty-icon">

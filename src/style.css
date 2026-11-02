@@ -1184,11 +1184,78 @@ footer .local-dot {
   max-width: 940px;
   margin: 0 auto;
 }
-.study-area:fullscreen {
+.study-area.expanded {
   background: var(--bg);
-  padding: 35px;
+  color: var(--text);
+  padding: 18px clamp(14px, 3vw, 48px);
   overflow: auto;
-  max-width: 100%;
+  width: 100%;
+  max-width: none;
+  height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+.study-area.focus-mode {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+}
+.expanded > .back,
+.expanded > .page-heading .eyebrow,
+.expanded > .page-heading p {
+  display: none;
+}
+.expanded > .page-heading {
+  flex: 0 0 auto;
+  margin: 0 0 8px;
+}
+.expanded > .page-heading > div {
+  min-width: 0;
+}
+.expanded > .page-heading h1 {
+  font-size: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.expanded > .study-tabs {
+  flex: 0 0 auto;
+  margin-bottom: 6px;
+}
+.expanded .flashcard-session,
+.expanded .card-stage {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.expanded .study-toolbar {
+  flex: 0 0 auto;
+  margin: 8px 0 14px;
+}
+.study-area.expanded .flashcard {
+  flex: 1;
+  min-height: 140px;
+  height: auto;
+}
+.expanded .flash-navigation {
+  flex-shrink: 0;
+  margin: 12px 0;
+}
+.expanded .rating-buttons {
+  flex-shrink: 0;
+}
+.expanded .session-progress {
+  flex-shrink: 0;
+  width: min(360px, 100%);
+  margin: 12px auto;
+}
+.expanded .finish-session {
+  flex-shrink: 0;
+  margin: 0 auto;
+}
+.fullscreen-toggle {
+  min-height: 36px;
 }
 .study-area .back {
   margin-bottom: 19px;
@@ -1250,7 +1317,7 @@ footer .local-dot {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 21px;
   position: absolute;
   inset: 0;
@@ -1262,6 +1329,33 @@ footer .local-dot {
   box-shadow: 0 10px 28px #4d3d6b09;
   color: var(--text);
   overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+  cursor: pointer;
+}
+.card-face > * {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+.card-face > :first-child {
+  margin-top: auto;
+}
+.card-face > :last-child {
+  margin-bottom: auto;
+}
+.card-face:focus-visible {
+  outline: 3px solid var(--purple);
+  outline-offset: -4px;
+}
+.card-face.long-content > strong {
+  width: 100%;
+  font-size: clamp(17px, 1.7vw, 22px);
+  font-weight: 450;
+  text-align: left;
+}
+.card-face.long-content em {
+  width: 100%;
+  text-align: left;
 }
 .card-face > small {
   font-size: 9px;
@@ -2280,4 +2374,38 @@ th {
 .card-face > span,
 .flash-navigation strong > span {
   color: var(--muted);
+}
+
+@media (max-width: 760px) {
+  .expanded > .study-tabs {
+    display: none;
+  }
+  .expanded > .page-heading h1 {
+    font-size: 16px;
+  }
+  .expanded .study-toolbar {
+    gap: 8px;
+    margin: 6px 0 12px;
+  }
+  .expanded .study-toolbar > select {
+    flex: 1;
+    width: 100px;
+    min-width: 80px;
+    padding: 9px 6px;
+  }
+  .expanded .shuffle-control span {
+    display: none;
+  }
+  .expanded .study-toolbar .secondary {
+    min-height: 36px;
+    padding: 9px;
+    gap: 5px;
+  }
+  .expanded .flash-navigation {
+    gap: 14px;
+    margin: 8px 0;
+  }
+  .expanded .session-progress {
+    margin: 8px auto;
+  }
 }
