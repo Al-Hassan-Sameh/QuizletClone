@@ -25,6 +25,7 @@ import {
   grade,
   shuffle,
 } from "./domain";
+import { MathText } from "./MathText";
 export function Study({
   set: s,
   onBack,
@@ -298,15 +299,23 @@ export function Study({
                 <span className="flashcard-inner">
                   <span className="card-face" aria-hidden={flip}>
                     <small>TERM</small>
-                    <strong>{card.term}</strong>
+                    <strong>
+                      <MathText text={card.term} />
+                    </strong>
                     <span>
                       Click or press Space to flip <RotateCcw size={13} />
                     </span>
                   </span>
                   <span className="card-face card-back" aria-hidden={!flip}>
                     <small>DEFINITION</small>
-                    <strong>{card.definition}</strong>
-                    {card.notes && <em>{card.notes}</em>}
+                    <strong>
+                      <MathText text={card.definition} />
+                    </strong>
+                    {card.notes && (
+                      <em>
+                        <MathText text={card.notes} />
+                      </em>
+                    )}
                     <span>Click to see the term</span>
                   </span>
                 </span>
@@ -485,10 +494,14 @@ export function Study({
                 )}
               </span>
               <div>
-                <h3>{q.prompt}</h3>
+                <h3>
+                  <MathText text={q.prompt} />
+                </h3>
                 <p>Your answer: {answers[i] || "No answer"}</p>
                 {!grade(answers[i] || "", q.answer) && (
-                  <strong>Correct answer: {q.answer}</strong>
+                  <strong>
+                    Correct answer: <MathText text={q.answer} />
+                  </strong>
                 )}
               </div>
             </div>
@@ -499,7 +512,9 @@ export function Study({
           <div className="question-counter">
             QUESTION {index + 1} OF {quiz.length}
           </div>
-          <h2>{q.prompt}</h2>
+          <h2>
+            <MathText text={q.prompt} />
+          </h2>
           <QuestionInput
             question={q}
             value={answers[index] || ""}
@@ -514,7 +529,11 @@ export function Study({
               <strong>
                 {feedback ? "That’s right!" : "Keep this one in mind."}
               </strong>
-              {!feedback && <p>Correct answer: {q.answer}</p>}
+              {!feedback && (
+                <p>
+                  Correct answer: <MathText text={q.answer} />
+                </p>
+              )}
               <button
                 className="primary"
                 disabled={busy}
@@ -562,7 +581,9 @@ export function Study({
           {quiz.map((q, i) => (
             <section className="panel question-panel" key={i}>
               <div className="question-counter">QUESTION {i + 1}</div>
-              <h2>{q.prompt}</h2>
+              <h2>
+                <MathText text={q.prompt} />
+              </h2>
               <QuestionInput
                 question={q}
                 value={answers[i] || ""}
@@ -614,7 +635,7 @@ function QuestionInput({
           onClick={() => onChange(option)}
         >
           <span>{String.fromCharCode(65 + i)}</span>
-          {option}
+          <MathText text={option} />
         </button>
       ))}
     </div>

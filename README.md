@@ -13,6 +13,8 @@ npm run dev
 
 Create a set from the dashboard; add individual cards, paste tab-separated pairs, or import CSV. Organize sets by folder, tags, and favorites. Set menus offer editing, duplication, JSON export, and confirmed deletion.
 
+Card text supports Anki-style inline and display LaTeX delimiters, rendered locally with KaTeX in flashcards, quizzes, answer reviews, and review history. Invalid expressions remain visible as source text so they can be corrected in the editor. Imported Anki line breaks are displayed as line breaks; rendering does not require external services.
+
 ```sh
 npm test             # domain and IndexedDB tests
 npm run build        # strict TypeScript and production PWA bundle
@@ -46,6 +48,16 @@ All required scripts, styles, icons, and assets are bundled and precached. Data 
 Settings → **Export complete backup** downloads versioned JSON with all sets, cards, review schedules, and session history. **Restore complete backup** validates the file and asks for confirmation before atomically replacing the library. Invalid files leave existing data untouched. Export regularly: clearing browser data, private browsing, device loss, or storage eviction can remove local data. Recall cannot synchronize across devices; move backups yourself.
 
 Set menu → **Export JSON** exports one set. Settings → **Import study set JSON** adds independent copies with new IDs, preserving the current library. Set editor CSV accepts `term,definition,notes` (optional header), quoted commas, escaped quotes and embedded newlines. TSV paste accepts one term/definition pair per line, with optional notes in a third column.
+
+### Mathematically rigorous quantum mechanics example
+
+The decks folder includes 100 mechanism-focused quantum mechanics flashcards, ordered as 20 beginner, 50 intermediate, and 30 advanced. Each answer states a mathematical argument, relevant assumptions, and its physical conclusion.
+
+- Import [the complete Recall study set](decks/Quantum_Mechanics_100_Rigorous_Recall_Set.json) under Settings → Import study set JSON. This adds a set without replacing existing data.
+- Alternatively import [the three-column CSV](decks/Quantum_Mechanics_100_Rigorous_Recall.csv) in the set editor.
+- [The five-column Anki CSV](decks/Quantum_Mechanics_100_Rigorous_Anki.csv) retains IDs, difficulty, and topic tags.
+
+Use Flashcards mode for self-assessing derivations; written-answer auto-grading still requires an exact text match, not an equivalent proof.
 
 ## Structure
 

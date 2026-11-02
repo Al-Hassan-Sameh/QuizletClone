@@ -1276,6 +1276,23 @@ footer .local-dot {
   overflow-wrap: anywhere;
   max-width: 100%;
 }
+.math-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.math-expression .katex {
+  font-size: 1em;
+}
+.math-expression.display {
+  display: block;
+  max-width: 100%;
+}
+.math-expression .katex-display {
+  max-width: 100%;
+  overflow-x: auto;
+  overflow-y: hidden;
+  margin: 0.65em 0;
+}
 .card-face > span {
   font-size: 10px;
   color: #91829f;
