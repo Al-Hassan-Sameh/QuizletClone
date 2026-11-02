@@ -5,7 +5,7 @@ export default defineConfig({
   fullyParallel: false,
   workers: 1,
   use: {
-    baseURL: "http://127.0.0.1:4173",
+    baseURL: `http://127.0.0.1:4173${process.env.RECALL_PAGES_TEST ? "/QuizletClone/" : "/"}`,
     trace: "retain-on-failure",
     launchOptions: {
       ...(existsSync("/usr/bin/chromium")
@@ -15,8 +15,8 @@ export default defineConfig({
     },
   },
   webServer: {
-    command: "npm run preview -- --port 4173",
-    url: "http://127.0.0.1:4173",
+    command: `npm run preview -- --port 4173${process.env.RECALL_PAGES_TEST ? " --mode pages" : ""}`,
+    url: `http://127.0.0.1:4173${process.env.RECALL_PAGES_TEST ? "/QuizletClone/" : "/"}`,
     reuseExistingServer: !process.env.CI,
   },
   projects: [

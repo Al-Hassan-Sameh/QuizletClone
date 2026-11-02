@@ -2,6 +2,33 @@
 
 A private, offline-first flashcard and study app built with React, strict TypeScript, Vite, Tailwind CSS, Dexie (IndexedDB), Lucide icons, and a precaching PWA service worker. No accounts, backend, remote fonts, or runtime APIs.
 
+## Open on Windows with a desktop shortcut
+
+Open Recall from a browser or its own app window. No Node.js installation or terminal commands are required for this route.
+
+The intended browser-app address is **https://al-hassan-sameh.github.io/QuizletClone/**. Availability depends on GitHub Pages being enabled for this repository.
+
+### Repository owner: enable the website once
+
+1. Open the repository on GitHub and select **Settings → Pages**.
+2. Under **Build and deployment**, choose **Deploy from a branch**.
+3. Select the **gh-pages** branch and **/(root)** folder, then click **Save**.
+4. Wait for deployment to finish. Refresh the Pages settings until **Visit site** appears, then click it.
+
+### Create your Windows shortcut
+
+The repository ZIP includes **Recall.url**. After the website is enabled, copy that file to your Windows desktop and double-click it to open Recall in your default browser. Alternatively, right-click your desktop, choose **New → Shortcut**, paste the website address, click **Next**, name it **Recall**, and click **Finish**.
+
+If you prefer a separate app window instead of a browser tab:
+
+1. Open the website in **Microsoft Edge** or **Google Chrome** using your usual browser profile.
+2. Let the app fully load while online, then reload it once so its offline assets can finish caching.
+3. Click the **Install app** icon in the address bar when available. Alternatively, open the browser menu and choose **Apps → Install this site as an app** in Edge, or **Cast, save, and share → Install page as app** in Chrome. Menu wording varies by browser version.
+4. Select **Create desktop shortcut** if offered. If you prefer a browser shortcut, use the browser's **Create shortcut** command instead; select **Open as window** when that option is offered.
+5. Double-click the new **Recall** shortcut whenever you want to study. After the first successful online load and caching, the app can reopen offline.
+
+Keep using the same browser profile. Existing study data from `localhost` belongs to a different browser origin: export it through **Settings → Export complete backup** in the old app, then use **Restore complete backup** in the hosted app. Restore replaces that destination's current library, so export any data there first. Export backups regularly, and avoid clearing this site's browser data because that removes locally stored sets and progress.
+
 ## Run locally
 
 Requires Node.js 22.12+ (validated on 24) and npm.
@@ -18,6 +45,7 @@ Card text supports Anki-style inline and display LaTeX delimiters, rendered loca
 ```sh
 npm test             # domain and IndexedDB tests
 npm run build        # strict TypeScript and production PWA bundle
+npm run build:pages  # build for /QuizletClone/ on GitHub Pages
 npm run test:e2e     # desktop and mobile browser acceptance tests
 npm run preview      # serve the production build
 ```

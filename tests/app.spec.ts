@@ -8,7 +8,7 @@ async function navigate(page: Page, name: string) {
     .click();
 }
 async function create(page: Page) {
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "Create a set", exact: true }).click();
   await page.getByLabel("Title", { exact: true }).fill("Biology essentials");
   await page
@@ -26,7 +26,7 @@ async function create(page: Page) {
   ).toBeVisible();
 }
 test("renders LaTeX in an imported-style study set", async ({ page }) => {
-  await page.goto("/");
+  await page.goto("./");
   await page.getByRole("button", { name: "Create a set", exact: true }).click();
   await page.getByLabel("Title", { exact: true }).fill("Quantum notation");
   await page.getByLabel("Term 1", { exact: true }).fill("State \\(\\psi\\)");
@@ -321,4 +321,32 @@ test("key screens meet automated WCAG AA rules in both themes", async ({
       .analyze();
     expect(result.violations, `${theme} flashcards`).toEqual([]);
   }
+});
+
+test("install manifest and offline worker use the application base path", async ({
+  page,
+  baseURL,
+}) => {
+  await page.goto("./");
+  await expect(
+    page.getByRole("heading", { name: "Make room for a little learning." }),
+  ).toBeVisible();
+  const base = new URL(baseURL!).pathname;
+  const manifestURL = await page
+    .locator("link[rel=manifest]")
+    .evaluate((el: HTMLLinkElement) => el.href);
+  const response = await page.request.get(manifestURL);
+  expect(response.ok()).toBe(true);
+  const manifest = await response.json();
+  expect(manifest.start_url).toBe(base);
+  expect(manifest.scope).toBe(base);
+  for (const icon of manifest.icons) {
+    const url = new URL(icon.src, manifestURL);
+    expect(url.pathname.startsWith(base)).toBe(true);
+    expect((await page.request.get(url.href)).ok()).toBe(true);
+  }
+  const scope = await page.evaluate(
+    async () => (await navigator.serviceWorker.ready).scope,
+  );
+  expect(new URL(scope).pathname).toBe(base);
 });
