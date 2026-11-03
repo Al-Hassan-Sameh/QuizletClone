@@ -2,6 +2,14 @@
 
 A private, offline-first flashcard and study app built with React, strict TypeScript, Vite, Tailwind CSS, Dexie (IndexedDB), Lucide icons, and a precaching PWA service worker. Core study works without accounts, a backend, or runtime APIs. The optional context-aware AI tutor uses a separately configured authenticated backend; see [AI tutor setup](docs/AI_TUTOR.md).
 
+## Use your existing ChatGPT plan
+
+Open a study card and choose **Ask AI Tutor → ChatGPT — existing plan** (the default). Enter your question, select **1. Copy study prompt**, then **2. Open ChatGPT**. Paste and send the prompt in ChatGPT. Your normal plan limits apply; this path needs no API key, extra API billing, or hosted backend.
+
+The preview shows exactly what is copied. Answers and private notes are excluded before reveal; notes require explicit opt-in after reveal. Study content is never included in the ChatGPT URL or submitted automatically. If clipboard permission fails, select and copy the preview manually. Conversations stay in ChatGPT and do not sync into Recall. Copy a fresh prompt when switching cards. During unsubmitted tests the tutor remains unavailable.
+
+The separate **Embedded AI — separate API billing** tab is available for independently configured API services and is not covered by ChatGPT Plus.
+
 ## Open on Windows with a desktop shortcut
 
 Open Recall from a browser or its own app window. No Node.js installation or terminal commands are required for this route.

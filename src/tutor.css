@@ -4,3 +4,13 @@
 @media(prefers-color-scheme:dark){.tutor-panel{background:var(--surface,#212334);color:var(--text,#f0eff7)}.tutor-bubble{background:var(--bg,#2c2f44)}}
 
 .study-toolbar .tutor-layout{margin:0;flex-shrink:0}.study-toolbar .tutor-launch{font-size:11px;padding:9px 10px;white-space:nowrap}.study-toolbar:has(.tutor-layout){flex-wrap:wrap}.study-area.expanded .study-toolbar .tutor-layout{margin:0}
+
+.tutor-methods{display:flex;gap:8px;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0;flex-wrap:wrap}
+.tutor-methods button{font-size:12px;padding:8px 10px}
+.tutor-methods button[aria-pressed=true]{background:var(--soft);color:var(--purple)}
+.chatgpt-handoff{padding:16px;overflow:auto;overscroll-behavior:contain}
+.chatgpt-handoff p{margin:10px 0}.chatgpt-handoff label{margin:14px 0}
+.chatgpt-handoff .button-row{display:flex;gap:10px;flex-wrap:wrap}
+.chatgpt-handoff a{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line);padding:10px 14px;border-radius:8px}
+.chatgpt-handoff small{display:block}.chatgpt-handoff textarea{font-size:14px}
+@media(max-width:650px){.chatgpt-handoff textarea{font-size:16px}}
