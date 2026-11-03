@@ -1,3 +1,4 @@
+import { ChatGPTHandoff } from "./ChatGPTHandoff";
 import { useEffect, useRef, useState } from "react";
 import { MathText } from "./MathText";
 import { contextFor, conversationKey, readTutorStream, tutorModes, type TutorContext, type TutorMessage, type TutorMode } from "./tutor";
@@ -34,6 +35,7 @@ export function Tutor({ set, card, question, revealed, selectedAnswer = "", onRe
   set: StudySet; card: Card; question?: Question; revealed: boolean; selectedAnswer?: string; onReveal?: () => void; requestOpen?: number;
 }) {
   const [open, setOpen] = useState(false);
+  const [method, setMethod] = useState<"chatgpt" | "api">("chatgpt");
   const [mobile, setMobile] = useState(window.innerWidth <= 650);
   useEffect(() => { const resize = () => setMobile(window.innerWidth <= 650); window.addEventListener("resize", resize); return () => window.removeEventListener("resize", resize); }, []);
   useEffect(() => { if (requestOpen) setOpen(true); }, [requestOpen]);
@@ -54,7 +56,12 @@ export function Tutor({ set, card, question, revealed, selectedAnswer = "", onRe
       }
     }}>
       <header><div><strong>✦ Your study tutor</strong><small>Discussing: Card {set.cards.findIndex(c => c.id === card.id) + 1} — {card.term.slice(0, 90)}</small></div><button type="button" className="secondary" aria-label="Close tutor" onClick={() => setOpen(false)}>×</button></header>
-      <TutorChat key={key + user} context={context} storageKey={key} user={user} onUser={setUser} notes={notes} onNotes={setNotes} related={related} onRelated={setRelated} onReveal={onReveal} />
+      <div className="tutor-methods" role="group" aria-label="Tutor connection">
+        <button type="button" className="secondary" aria-pressed={method === "chatgpt"} onClick={() => setMethod("chatgpt")}>ChatGPT — existing plan</button>
+        <button type="button" className="secondary" aria-pressed={method === "api"} onClick={() => setMethod("api")}>Embedded AI — separate API billing</button>
+      </div>
+      {method === "chatgpt" ? <ChatGPTHandoff key={key} context={context} notes={notes} onNotes={setNotes} /> :
+      <TutorChat key={key + user} context={context} storageKey={key} user={user} onUser={setUser} notes={notes} onNotes={setNotes} related={related} onRelated={setRelated} onReveal={onReveal} />}
     </aside>}
   </div>;
 }

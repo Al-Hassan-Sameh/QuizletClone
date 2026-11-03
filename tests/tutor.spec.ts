@@ -14,6 +14,7 @@ async function study(page: Page) {
 }
 async function connect(page: Page) {
   await page.getByRole("button", { name: /Ask AI Tutor/ }).click();
+  await page.getByRole("button", { name: "Embedded AI — separate API billing", exact: true }).click();
   await page.getByText("Privacy & connection", { exact: true }).click();
   await page.getByLabel("Personal tutor access token").fill("test-only-personal-access-token-123");
   await page.getByRole("button", { name: "Connect securely" }).click();
@@ -52,6 +53,7 @@ test("shares active context, preserves per-card history, discards delayed replie
   await page.reload();
   await page.getByRole("button", { name: "Study Tutor vocabulary", exact: true }).click();
   await page.getByRole("button", { name: /Ask AI Tutor/ }).click();
+  await page.getByRole("button", { name: "Embedded AI — separate API billing", exact: true }).click();
   await expect(page.getByRole("log")).toContainText("Saved first-card guidance.");
   await context.setOffline(true);
   await expect(page.getByText("You're offline.", { exact: false })).toBeVisible();
@@ -67,12 +69,14 @@ test("protects active MCQs and disables the tutor until test submission", async 
   await page.getByLabel("True or false", { exact: true }).uncheck();
   await page.getByRole("button", { name: "Start learn session" }).click();
   await page.getByRole("button", { name: /Ask AI Tutor/ }).click();
+  await page.getByRole("button", { name: "Embedded AI — separate API billing", exact: true }).click();
   await expect(page.getByText("Hints only until", { exact: false })).toBeVisible();
   await expect(page.getByRole("button", { name: "Explain the wrong answers", exact: true })).toHaveCount(0);
   await page.getByRole("button", { name: "Close tutor", exact: true }).click();
   await page.locator(".answer-options button").first().click();
   await page.getByRole("button", { name: "Check answer", exact: true }).click();
   await page.getByRole("button", { name: /Ask AI Tutor/ }).click();
+  await page.getByRole("button", { name: "Embedded AI — separate API billing", exact: true }).click();
   await expect(page.getByRole("button", { name: "Explain the wrong answers", exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Test", exact: true }).click();
   await page.getByRole("button", { name: "Start test session" }).click();
@@ -87,6 +91,7 @@ test("mobile tutor uses a dismissible full-screen dialog without hiding study co
   await study(page);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: /Ask AI Tutor/ }).click();
+  await page.getByRole("button", { name: "Embedded AI — separate API billing", exact: true }).click();
   const dialog = page.getByRole("dialog", { name: "AI study tutor" });
   await expect(dialog).toBeVisible();
   await expect(dialog).toHaveAttribute("aria-modal", "true");
