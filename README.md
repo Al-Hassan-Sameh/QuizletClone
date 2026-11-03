@@ -1,6 +1,22 @@
 # Recall
 
-A private, offline-first flashcard and study app built with React, strict TypeScript, Vite, Tailwind CSS, Dexie (IndexedDB), Lucide icons, and a precaching PWA service worker. Core study works without accounts, a backend, or runtime APIs. The optional context-aware AI tutor uses a separately configured authenticated backend; see [AI tutor setup](docs/AI_TUTOR.md).
+A private, offline-first flashcard and study app built with React, strict TypeScript, Vite, Tailwind CSS, Dexie (IndexedDB), Lucide icons, and a precaching PWA service worker. Core study works without accounts, a backend, or runtime APIs. Optional Supabase accounts add email and Google sign-in with private, conflict-aware workspace synchronization; see [account configuration](docs/ACCOUNTS.md). The optional context-aware AI tutor uses a separately configured authenticated backend; see [AI tutor setup](docs/AI_TUTOR.md).
+
+## Recall learning studio
+
+- **My Library / Flashcards:** create and organize sets, CSV/TSV import, reverse cards, bookmarks, keyboard navigation, full-screen study and scheduled reviews. Use folder paths such as `Semester/Biology` for nested naming; select a parent folder to include its descendants.
+- **Question banks:** independently author 2–6-choice MCQs with hints, explanations, difficulty and categories; edit, duplicate, save and bulk import/export JSON questions.
+- **Practice:** adaptive weak-first ordering, difficulty filters, generated 2–6-choice questions, written/fill-in-the-blank questions with configurable accepted alternatives and exact/normalized checking, number-key answers, immediate feedback and mistake retries. Generation uses distinct answers from the same study set; semantic plausibility still needs author review.
+- **Exams:** combine multiple sets and question banks, select a format and difficulty, configure a timer/feedback, navigate and flag questions, save/resume drafts, auto-submit at an absolute deadline, review stored attempts and retake missed questions. These are personal practice exams, not proctored assessments.
+- **Study Planner:** daily review goals, scheduled study/review tasks, linked sets, exam dates and completion tracking, all offline.
+- **Bookmarks & notes:** save flashcards/questions, search personal and topic notes, link notes to sets.
+- **Matching:** match up to six distinct definitions, with completion time, accuracy and stored results.
+- **Performance Analytics:** actual review events, topic accuracy, weakest topics, measured practice/exam duration, weekly results, review workload and existing session history.
+- **Account Profile:** real Supabase email/Google authentication integration, verification/reset flows, profile updates, account deletion and separate local account libraries. Explicitly enable snapshot synchronization; conflicting edits require a choice and retain recovery copies. Hosted providers must be configured before these features can be used.
+
+Database version 3 adds tables without removing existing data. Complete version-2 backups include the new tools and remain compatible with legacy version-1 restores. A complete restore replaces the destination library; export first. Active draft timers keep running while away. Auth sessions and tutor conversations are not part of library backups.
+
+The [audit and upgrade plan](docs/UPGRADE_AUDIT.md) records the baseline and priorities. The [implementation report](docs/IMPLEMENTATION.md) records validation and remaining limits.
 
 ## Use your existing ChatGPT plan
 
@@ -81,7 +97,7 @@ All required scripts, styles, icons, and assets are bundled and precached. Data 
 
 ## Backups and imports
 
-Settings → **Export complete backup** downloads versioned JSON with all sets, cards, review schedules, and session history. **Restore complete backup** validates the file and asks for confirmation before atomically replacing the library. Invalid files leave existing data untouched. Export regularly: clearing browser data, private browsing, device loss, or storage eviction can remove local data. Recall cannot synchronize across devices; move backups yourself.
+Settings → **Export complete backup** downloads versioned JSON with all sets, cards, review schedules, and session history. **Restore complete backup** validates the file and asks for confirmation before atomically replacing the library. Invalid files leave existing data untouched. Export regularly: clearing browser data, private browsing, device loss, or storage eviction can remove local data. Without a configured account, move backups between devices yourself. Optional account synchronization is described in docs/ACCOUNTS.md.
 
 Set menu → **Export JSON** exports one set. Settings → **Import study set JSON** adds independent copies with new IDs, preserving the current library. Set editor CSV accepts `term,definition,notes` (optional header), quoted commas, escaped quotes and embedded newlines. TSV paste accepts one term/definition pair per line, with optional notes in a third column.
 
@@ -107,4 +123,4 @@ Use Flashcards mode for self-assessing derivations; written-answer auto-grading 
 
 ## Scope
 
-Core study content stays on the device. The optional AI tutor shares the selected card context with the configured service only when you send a message, and can optionally save its conversation to your tutor service account. There is no study-library cloud synchronization, collaboration, account recovery, media attachment support, or matching game. The optional matching game is intentionally omitted. Session history retains summaries; a separate per-card review log records outcomes and scheduled intervals. Keep a backup before changing device, browser, or origin.
+Core study content stays on the device. The optional AI tutor shares the selected card context with the configured service only when you send a message, and can optionally save its conversation to your tutor service account. Optional study-library synchronization and account recovery require the configured Supabase service. Matching is available locally. Collaboration, media attachments and proctored examinations are not implemented. Session history retains summaries; a separate per-card review log records outcomes and scheduled intervals. Keep a backup before changing device, browser, or origin.

@@ -1,9 +1,13 @@
+import { validatePlatform, type PlatformData } from "./platform";
 export type Status = "new" | "learning" | "known";
 export interface Card {
   id: string;
   term: string;
   definition: string;
   notes: string;
+  difficulty?: "easy" | "medium" | "hard";
+  alternatives?: string[];
+  checking?: "exact" | "normalized";
   status: Status;
   reviews: number;
   lastReviewed: number | null;
@@ -111,6 +115,7 @@ export function questions(
   cards: Card[],
   count: number,
   types: QuestionType[],
+  optionCount = 4,
 ): Question[] {
   if (!types.length) throw new Error("Choose at least one question type.");
   return shuffle(cards)
@@ -118,12 +123,12 @@ export function questions(
     .map((card, i) => {
       let type = types[i % types.length];
       const alternatives = [
-        ...new Set(
+        ...new Map(
           cards
             .filter((c) => !grade(c.definition, card.definition))
-            .map((c) => c.definition),
+            .map((c) => [normalize(c.definition), c.definition] as const),
         ),
-      ];
+      ].map(([, definition]) => definition);
       if (!alternatives.length) type = "written";
       if (type === "boolean") {
         const correct = Math.random() > 0.5;
@@ -143,7 +148,13 @@ export function questions(
         type,
         options:
           type === "multiple"
-            ? shuffle([card.definition, ...shuffle(alternatives).slice(0, 3)])
+            ? shuffle([
+                card.definition,
+                ...shuffle(alternatives).slice(
+                  0,
+                  Math.min(6, Math.max(2, optionCount)) - 1,
+                ),
+              ])
             : [],
       };
     });
@@ -201,20 +212,22 @@ export function importPairs(text: string, csv = false): Card[] {
 const finite = (v: unknown) =>
   typeof v === "number" && Number.isFinite(v) && v >= 0;
 export function validateBackup(value: unknown): {
-  version: 1;
+  version: 1 | 2;
+  platform?: PlatformData;
   sets: StudySet[];
   sessions: Session[];
   reviews: ReviewEvent[];
 } {
   const v = value as {
     version: number;
+    platform?: PlatformData;
     sets: StudySet[];
     sessions: Session[];
     reviews?: ReviewEvent[];
   };
   if (
     !v ||
-    v.version !== 1 ||
+    ![1, 2].includes(v.version) ||
     !Array.isArray(v.sets) ||
     !Array.isArray(v.sessions)
   )
@@ -225,7 +238,8 @@ export function validateBackup(value: unknown): {
       !s ||
       typeof s.id !== "string" ||
       ids.has(s.id) ||
-      !s.title?.trim() ||
+      typeof s.title !== "string" ||
+      !s.title.trim() ||
       typeof s.description !== "string" ||
       typeof s.folder !== "string" ||
       !Array.isArray(s.tags) ||
@@ -248,6 +262,13 @@ export function validateBackup(value: unknown): {
         typeof c.definition !== "string" ||
         !c.definition.trim() ||
         typeof c.notes !== "string" ||
+        (c.difficulty !== undefined &&
+          !["easy", "medium", "hard"].includes(c.difficulty)) ||
+        (c.checking !== undefined &&
+          !["exact", "normalized"].includes(c.checking)) ||
+        (c.alternatives !== undefined &&
+          (!Array.isArray(c.alternatives) ||
+            c.alternatives.some((a) => typeof a !== "string"))) ||
         !["new", "known", "learning"].includes(c.status) ||
         ![c.reviews, c.due, c.interval, c.ease].every(finite) ||
         c.ease < 1.3 ||
@@ -291,9 +312,17 @@ export function validateBackup(value: unknown): {
       throw new Error("Invalid review event.");
     reviewIds.add(r.id);
   }
-  return { ...v, version: 1, reviews };
+  return {
+    ...v,
+    version: v.version as 1 | 2,
+    reviews,
+    ...(v.version === 2 ? { platform: validatePlatform(v.platform) } : {}),
+  };
 }
-export function streak(sessions: Session[], now = new Date()): number {
+export function streak(
+  sessions: Pick<Session, "date">[],
+  now = new Date(),
+): number {
   const days = new Set(
     sessions.map((s) => new Date(s.date).toLocaleDateString("en-CA")),
   );

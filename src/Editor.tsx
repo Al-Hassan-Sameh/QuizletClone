@@ -191,6 +191,74 @@ export function Editor({
                 />
               </label>
             </div>
+            <div className="two-col card-advanced">
+              <label>
+                Difficulty
+                <select
+                  aria-label={`Difficulty ${i + 1}`}
+                  value={c.difficulty || "medium"}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      cards: draft.cards.map((item) =>
+                        item.id === c.id
+                          ? {
+                              ...item,
+                              difficulty: e.target.value as Card["difficulty"],
+                            }
+                          : item,
+                      ),
+                    })
+                  }
+                >
+                  <option value="easy">Easy</option>
+                  <option value="medium">Medium</option>
+                  <option value="hard">Hard</option>
+                </select>
+              </label>
+              <label>
+                Answer checking
+                <select
+                  aria-label={`Answer checking ${i + 1}`}
+                  value={c.checking || "normalized"}
+                  onChange={(e) =>
+                    setDraft({
+                      ...draft,
+                      cards: draft.cards.map((item) =>
+                        item.id === c.id
+                          ? {
+                              ...item,
+                              checking: e.target.value as Card["checking"],
+                            }
+                          : item,
+                      ),
+                    })
+                  }
+                >
+                  <option value="normalized">
+                    Ignore case and extra whitespace
+                  </option>
+                  <option value="exact">Exact text</option>
+                </select>
+              </label>
+            </div>
+            <label>
+              Accepted written alternatives · one per line
+              <textarea
+                aria-label={`Alternatives ${i + 1}`}
+                value={(c.alternatives || []).join("\n")}
+                onChange={(e) =>
+                  setDraft({
+                    ...draft,
+                    cards: draft.cards.map((item) =>
+                      item.id === c.id
+                        ? { ...item, alternatives: e.target.value.split("\n") }
+                        : item,
+                    ),
+                  })
+                }
+              />
+            </label>
             <label className="notes-label">
               Notes · optional
               <input

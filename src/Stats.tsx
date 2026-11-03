@@ -1,3 +1,6 @@
+import { useLiveQuery } from "dexie-react-hooks";
+import { db } from "./db";
+import { correctAnswer, localDay } from "./platform";
 import { CheckCircle2, Target, Flame, Clock } from "lucide-react";
 import {
   type StudySet,
@@ -16,8 +19,31 @@ export function Stats({
   sessions: Session[];
   reviews: ReviewEvent[];
 }) {
+  const attempts = useLiveQuery(() => db.attempts.toArray()) || [];
+  const topics = new Map<string, { correct: number; total: number }>();
+  for (const r of reviews) {
+    const set = sets.find((s) => s.id === r.setId);
+    const topic =
+      set?.tags[0] || set?.folder || set?.title || "Archived material";
+    const data = topics.get(topic) || { correct: 0, total: 0 };
+    data.total++;
+    data.correct += Number(r.known);
+    topics.set(topic, data);
+  }
+  for (const a of attempts)
+    a.questions.forEach((q, i) => {
+      if (q.source === "bank") {
+        const topic = q.category || "Question bank";
+        const data = topics.get(topic) || { correct: 0, total: 0 };
+        data.total++;
+        data.correct += Number(correctAnswer(q, a.answers[i] || ""));
+        topics.set(topic, data);
+      }
+    });
+  const totalQuestions = [...topics.values()].reduce((n, t) => n + t.total, 0);
+  const totalCorrect = [...topics.values()].reduce((n, t) => n + t.correct, 0);
   const cards = sets.flatMap((s) => s.cards);
-  const tests = sessions.filter((s) => s.mode === "Test");
+  const tests = sessions.filter((s) => s.mode === "Test" || s.mode === "Exam");
   const total = tests.reduce((a, s) => a + s.total, 0);
   const accuracy = total
     ? Math.round((tests.reduce((a, s) => a + s.correct, 0) / total) * 100)
@@ -59,7 +85,7 @@ export function Stats({
         <Metric
           icon={<Flame />}
           label="Current streak"
-          value={`${streak(sessions)} days`}
+          value={`${streak([...sessions, ...attempts])} days`}
           foot="Keep your momentum"
           color="orange"
         />
@@ -126,6 +152,121 @@ export function Stats({
           ))}
         </section>
       </div>
+      <section className="panel history advanced-analytics">
+        <h2>Performance by topic</h2>
+        <p>
+          {totalQuestions} recorded recalls and bank answers ·{" "}
+          {totalQuestions
+            ? Math.round((totalCorrect / totalQuestions) * 100)
+            : 0}
+          % correct.{" "}
+          {Math.round(attempts.reduce((n, a) => n + a.duration, 0) / 60)}{" "}
+          measured minutes in Practice and Exams.
+        </p>
+        {!topics.size ? (
+          <p>
+            Complete a review or practice session to see your strongest and
+            weakest topics.
+          </p>
+        ) : (
+          <div className="history-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Topic</th>
+                  <th>Answers</th>
+                  <th>Accuracy</th>
+                  <th>Progress</th>
+                </tr>
+              </thead>
+              <tbody>
+                {[...topics]
+                  .sort(
+                    ([, a], [, b]) => a.correct / a.total - b.correct / b.total,
+                  )
+                  .map(([topic, data]) => (
+                    <tr key={topic}>
+                      <td>{topic}</td>
+                      <td>{data.total}</td>
+                      <td>{Math.round((data.correct / data.total) * 100)}%</td>
+                      <td>
+                        <progress
+                          aria-label={`${topic} accuracy`}
+                          value={data.correct}
+                          max={data.total}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+        <h3>Weekly improvement</h3>
+        <p>
+          Actual results from completed Practice and Exam attempts; no estimates
+          for earlier sessions.
+        </p>
+        <div className="history-scroll">
+          <table>
+            <thead>
+              <tr>
+                <th>Week</th>
+                <th>Questions</th>
+                <th>Accuracy</th>
+              </tr>
+            </thead>
+            <tbody>
+              {[3, 2, 1, 0].map((weeks) => {
+                const end = new Date();
+                end.setHours(23, 59, 59, 999);
+                end.setDate(end.getDate() - weeks * 7);
+                const start = new Date(end);
+                start.setDate(start.getDate() - 6);
+                start.setHours(0, 0, 0, 0);
+                const list = attempts.filter(
+                  (a) => a.date >= start.getTime() && a.date <= end.getTime(),
+                );
+                const total = list.reduce((n, a) => n + a.questions.length, 0);
+                return (
+                  <tr key={weeks}>
+                    <td>
+                      {localDay(start)} – {localDay(end)}
+                    </td>
+                    <td>{total}</td>
+                    <td>
+                      {total
+                        ? `${Math.round((list.reduce((n, a) => n + a.correct, 0) / total) * 100)}%`
+                        : "No data"}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <h3>Upcoming review workload</h3>
+        <div className="workload-grid">
+          {Array.from({ length: 7 }, (_, i) => {
+            const d = new Date();
+            d.setDate(d.getDate() + i);
+            const day = localDay(d);
+            const count = cards.filter((c) =>
+              i === 0 ? c.due <= Date.now() : localDay(new Date(c.due)) === day,
+            ).length;
+            return (
+              <div key={day}>
+                <strong>{count}</strong>
+                <small>
+                  {i === 0
+                    ? "Due now"
+                    : d.toLocaleDateString(undefined, { weekday: "short" })}
+                </small>
+              </div>
+            );
+          })}
+        </div>
+      </section>
       <section className="panel history">
         <h2>Your study history</h2>
         <p>Real effort. Saved right here.</p>

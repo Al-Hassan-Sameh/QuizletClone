@@ -32,7 +32,9 @@ export function Study({
   set: s,
   onBack,
   run,
+  dueOnly = false,
 }: {
+  dueOnly?: boolean;
   set: StudySet;
   onBack: () => void;
   run: (a: () => Promise<unknown>, message?: string) => Promise<void>;
@@ -40,10 +42,13 @@ export function Study({
   const [mode, setMode] = useState("Flashcards");
   const [tutorReview, setTutorReview] = useState(0);
   const [tutorRequest, setTutorRequest] = useState(0);
-  const [filter, setFilter] = useState("all");
-  const [membership, setMembership] = useState(s.cards.map((c) => c.id));
+  const [filter, setFilter] = useState(dueOnly ? "due" : "all");
+  const [membership, setMembership] = useState(
+    s.cards.filter((c) => !dueOnly || c.due <= Date.now()).map((c) => c.id),
+  );
   const [order, setOrder] = useState(s.cards.map((c) => c.id));
   const [index, setIndex] = useState(0);
+  const [reverse, setReverse] = useState(false);
   const [flip, setFlip] = useState(false);
   const [round, setRound] = useState(0);
   const [seen, setSeen] = useState<Record<string, boolean>>({});
@@ -280,20 +285,38 @@ export function Study({
   };
   const q = quiz?.[index];
   const tutorQuestion = submitted ? quiz?.[tutorReview] : q;
-  const tutorCard = mode === "Flashcards" ? card : s.cards.find(c => c.id === tutorQuestion?.cardId);
-  const tutor = tutorCard && !finished && (mode === "Flashcards" || (quiz && (mode === "Learn" || submitted))) && (
-        <Tutor set={s} card={tutorCard} question={mode === "Flashcards" ? undefined : tutorQuestion}
-          revealed={mode === "Flashcards" ? flip : submitted || feedback !== null}
-          selectedAnswer={answers[submitted ? tutorReview : index] || ""}
-          requestOpen={tutorRequest}
-          onReveal={mode === "Flashcards" ? () => setFlip(true) : !submitted && feedback === null ? () => {
-            setAnswers(a => ({ ...a, [index]: "" }));
-            setFeedback(false);
-            if (q && quiz && quiz.filter(item => item.cardId === q.cardId).length < 2)
-              setQuiz([...quiz, { ...q, options: shuffle(q.options) }]);
-          } : undefined}
-        />
-      );
+  const tutorCard =
+    mode === "Flashcards"
+      ? card
+      : s.cards.find((c) => c.id === tutorQuestion?.cardId);
+  const tutor = tutorCard &&
+    !finished &&
+    (mode === "Flashcards" || (quiz && (mode === "Learn" || submitted))) && (
+      <Tutor
+        set={s}
+        card={tutorCard}
+        question={mode === "Flashcards" ? undefined : tutorQuestion}
+        revealed={mode === "Flashcards" ? flip : submitted || feedback !== null}
+        selectedAnswer={answers[submitted ? tutorReview : index] || ""}
+        requestOpen={tutorRequest}
+        onReveal={
+          mode === "Flashcards"
+            ? () => setFlip(true)
+            : !submitted && feedback === null
+              ? () => {
+                  setAnswers((a) => ({ ...a, [index]: "" }));
+                  setFeedback(false);
+                  if (
+                    q &&
+                    quiz &&
+                    quiz.filter((item) => item.cardId === q.cardId).length < 2
+                  )
+                    setQuiz([...quiz, { ...q, options: shuffle(q.options) }]);
+                }
+              : undefined
+        }
+      />
+    );
   const score =
     quiz?.filter((q, i) => grade(answers[i] || "", q.answer)).length || 0;
   return (
@@ -383,6 +406,36 @@ export function Study({
             </button>
             {fullscreenButton}
             <button
+              className="secondary"
+              aria-pressed={reverse}
+              onClick={() => {
+                setReverse(!reverse);
+                setFlip(false);
+              }}
+            >
+              Reverse cards
+            </button>
+            {card && (
+              <button
+                className="secondary"
+                onClick={() =>
+                  void run(
+                    () =>
+                      db.bookmarks.put({
+                        id: `card:${s.id}:${card.id}`,
+                        kind: "card",
+                        sourceId: card.id,
+                        setId: s.id,
+                        title: card.term,
+                      }),
+                    "Card bookmarked",
+                  )
+                }
+              >
+                Bookmark card
+              </button>
+            )}
+            <button
               className="icon-button"
               aria-label="Restart session"
               onClick={reset}
@@ -442,7 +495,7 @@ export function Study({
                   >
                     <small>TERM</small>
                     <strong>
-                      <MathText text={card.term} />
+                      <MathText text={reverse ? card.definition : card.term} />
                     </strong>
                     <span>
                       Click or press Space to flip <RotateCcw size={13} />
@@ -458,7 +511,7 @@ export function Study({
                   >
                     <small>DEFINITION</small>
                     <strong>
-                      <MathText text={card.definition} />
+                      <MathText text={reverse ? card.term : card.definition} />
                     </strong>
                     {card.notes && (
                       <em>
@@ -655,7 +708,16 @@ export function Study({
                   <MathText text={q.prompt} />
                 </h3>
                 <p>Your answer: {answers[i] || "No answer"}</p>
-                <button type="button" className="secondary tutor-review-button" onClick={() => { setTutorReview(i); setTutorRequest(n => n + 1); }}>Discuss this question with AI</button>
+                <button
+                  type="button"
+                  className="secondary tutor-review-button"
+                  onClick={() => {
+                    setTutorReview(i);
+                    setTutorRequest((n) => n + 1);
+                  }}
+                >
+                  Discuss this question with AI
+                </button>
                 {!grade(answers[i] || "", q.answer) && (
                   <strong>
                     Correct answer: <MathText text={q.answer} />
@@ -756,7 +818,12 @@ export function Study({
         </form>
       )}
       {mode !== "Flashcards" && tutor}
-      {mode === "Test" && quiz && !submitted && <p className="muted">AI Tutor is disabled during tests. Submit your test to discuss each question in answer review.</p>}
+      {mode === "Test" && quiz && !submitted && (
+        <p className="muted">
+          AI Tutor is disabled during tests. Submit your test to discuss each
+          question in answer review.
+        </p>
+      )}
     </div>
   );
 }

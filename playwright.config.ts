@@ -2,6 +2,7 @@ import { existsSync } from "node:fs";
 import { defineConfig, devices } from "@playwright/test";
 export default defineConfig({
   testDir: "./tests",
+  testIgnore: process.env.RECALL_MOCK_AUTH ? [] : ["**/accounts.spec.ts"],
   fullyParallel: false,
   workers: 1,
   use: {
