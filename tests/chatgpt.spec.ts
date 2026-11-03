@@ -25,7 +25,7 @@ test("defaults to a no-backend handoff with protected context and a content-free
   await expect(preview).not.toHaveValue(/Wealthy area/);
   await page.getByLabel("Your question for ChatGPT").fill("Help me with this term.");
   await page.getByRole("button", { name: "1. Copy study prompt" }).click();
-  await expect(page.getByRole("status")).toContainText("Copied.");
+  await expect(page.getByRole("region", { name: "Ask in ChatGPT", exact: true }).getByRole("status")).toContainText("Copied.");
   expect(await page.evaluate(() => (window as unknown as { copiedPrompt: string }).copiedPrompt)).toContain("Help me with this term.");
   const link = page.getByRole("link", { name: /Open ChatGPT/ });
   await expect(link).toHaveAttribute("href", "https://chatgpt.com/");
@@ -43,7 +43,7 @@ test("provides a selectable manual copy fallback when clipboard permission fails
   });
   await openStudy(page);
   await page.getByRole("button", { name: "1. Copy study prompt" }).click();
-  await expect(page.getByRole("status")).toContainText("copy the preview");
+  await expect(page.getByRole("region", { name: "Ask in ChatGPT", exact: true }).getByRole("status")).toContainText("copy the preview");
   const preview = page.getByLabel("Study prompt preview");
   await expect(preview).toBeFocused();
   expect(await preview.evaluate((element: HTMLTextAreaElement) => element.selectionEnd - element.selectionStart)).toBeGreaterThan(0);
