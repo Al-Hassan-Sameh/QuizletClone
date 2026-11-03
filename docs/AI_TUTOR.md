@@ -17,7 +17,7 @@ Requires Node.js 22.12+. Study remains usable without configuring AI.
 6. On GitHub Pages, enter your deployed HTTPS tutor-service URL instead. Set TUTOR_ALLOWED_ORIGINS to the exact app origin (https://al-hassan-sameh.github.io), without the repository path. Keep CORS restrictive. GitHub Pages cannot execute this backend.
 7. Deploy the Node service behind an HTTPS reverse proxy. Disable proxy response buffering for streaming. Set TUTOR_HOST=0.0.0.0 only when needed inside a container/private network. Mount TUTOR_DATA_DIR on a durable private volume. Configure volume encryption and backups according to your deployment requirements.
 
-No provider credentials are bundled into the PWA. Personal access tokens stay in frontend memory and must be re-entered after a reload. They are sent only to the explicitly configured tutor service. Study cards, schedules, and sessions remain local.
+No provider credentials are bundled into the PWA. Personal access tokens stay in frontend memory and must be re-entered after a reload. The last service/account label is remembered without credentials so that its local conversations remain readable offline; this is device-local history, not an offline authorization check. They are sent only to the explicitly configured tutor service. Study cards, schedules, and sessions remain local.
 
 ## Behavior and privacy
 

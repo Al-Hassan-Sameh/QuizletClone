@@ -197,6 +197,7 @@ export function Study({
     setAnswers({});
     setIndex(0);
     setSubmitted(false);
+    setTutorReview(0);
     setFeedback(null);
     setRetries([]);
   };
@@ -280,6 +281,19 @@ export function Study({
   const q = quiz?.[index];
   const tutorQuestion = submitted ? quiz?.[tutorReview] : q;
   const tutorCard = mode === "Flashcards" ? card : s.cards.find(c => c.id === tutorQuestion?.cardId);
+  const tutor = tutorCard && !finished && (mode === "Flashcards" || (quiz && (mode === "Learn" || submitted))) && (
+        <Tutor set={s} card={tutorCard} question={mode === "Flashcards" ? undefined : tutorQuestion}
+          revealed={mode === "Flashcards" ? flip : submitted || feedback !== null}
+          selectedAnswer={answers[submitted ? tutorReview : index] || ""}
+          requestOpen={tutorRequest}
+          onReveal={mode === "Flashcards" ? () => setFlip(true) : !submitted && feedback === null ? () => {
+            setAnswers(a => ({ ...a, [index]: "" }));
+            setFeedback(false);
+            if (q && quiz && quiz.filter(item => item.cardId === q.cardId).length < 2)
+              setQuiz([...quiz, { ...q, options: shuffle(q.options) }]);
+          } : undefined}
+        />
+      );
   const score =
     quiz?.filter((q, i) => grade(answers[i] || "", q.answer)).length || 0;
   return (
@@ -354,6 +368,7 @@ export function Study({
               <option value="learning">Still learning</option>
               <option value="known">Known cards</option>
             </select>
+            {mode === "Flashcards" && tutor}
             <button
               className="secondary shuffle-control"
               aria-label="Shuffle cards"
@@ -740,19 +755,7 @@ export function Study({
           <p className="muted">Unanswered questions count as incorrect.</p>
         </form>
       )}
-      {tutorCard && !finished && (mode === "Flashcards" || (quiz && (mode === "Learn" || submitted))) && (
-        <Tutor set={s} card={tutorCard} question={mode === "Flashcards" ? undefined : tutorQuestion}
-          revealed={mode === "Flashcards" ? flip : submitted || feedback !== null}
-          selectedAnswer={answers[submitted ? tutorReview : index] || ""}
-          requestOpen={tutorRequest}
-          onReveal={mode === "Flashcards" ? () => setFlip(true) : !submitted && feedback === null ? () => {
-            setAnswers(a => ({ ...a, [index]: "" }));
-            setFeedback(false);
-            if (q && quiz && quiz.filter(item => item.cardId === q.cardId).length < 2)
-              setQuiz([...quiz, { ...q, options: shuffle(q.options) }]);
-          } : undefined}
-        />
-      )}
+      {mode !== "Flashcards" && tutor}
       {mode === "Test" && quiz && !submitted && <p className="muted">AI Tutor is disabled during tests. Submit your test to discuss each question in answer review.</p>}
     </div>
   );

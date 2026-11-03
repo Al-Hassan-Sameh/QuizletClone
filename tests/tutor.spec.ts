@@ -48,7 +48,7 @@ test("shares active context, preserves per-card history, discards delayed replie
   await page.getByRole("button", { name: "Close tutor", exact: true }).click();
   await page.reload();
   await page.getByRole("button", { name: "Study Tutor vocabulary", exact: true }).click();
-  await connect(page);
+  await page.getByRole("button", { name: /Ask AI Tutor/ }).click();
   await expect(page.getByRole("log")).toContainText("Saved first-card guidance.");
   await context.setOffline(true);
   await expect(page.getByText("You're offline.", { exact: false })).toBeVisible();

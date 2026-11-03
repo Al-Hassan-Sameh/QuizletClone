@@ -7,6 +7,7 @@ import "./tutor.css";
 let credential = "";
 let identity = "guest";
 const setting = (key: string, fallback: string) => { try { return localStorage.getItem("recall-tutor:" + key) ?? fallback; } catch { return fallback; } };
+identity = setting("identity", "guest");
 function saveSetting(key: string, value: string) { try { localStorage.setItem("recall-tutor:" + key, value); } catch { /* Study remains available with storage blocked. */ } }
 const actions = [
   ["Explain this", "Explain the current concept."],
@@ -78,6 +79,7 @@ function TutorChat({ context, storageKey, user, onUser, notes, onNotes, related,
   const [endpoint, setEndpoint] = useState(setting("endpoint", ""));
   const [token, setToken] = useState("");
   const [sync, setSync] = useState(false);
+  const [connected, setConnected] = useState(!!credential);
   const [copied, setCopied] = useState<number | null>(null);
   const controller = useRef<AbortController | null>(null);
   const scroll = useRef<HTMLDivElement>(null);
@@ -110,8 +112,8 @@ function TutorChat({ context, storageKey, user, onUser, notes, onNotes, related,
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Could not connect.");
       saveSetting("endpoint", endpoint);
-      identity = new URL(endpoint || location.origin).origin + " / " + data.user; onUser(identity); setToken("");
-    } catch (e) { credential = ""; setError(e instanceof Error ? e.message : "Connection failed."); }
+      identity = new URL(endpoint || location.origin).origin + " / " + data.user; saveSetting("identity", identity); setConnected(true); onUser(identity); setToken("");
+    } catch (e) { credential = ""; setConnected(false); setError(e instanceof Error ? e.message : "Connection failed."); }
   }
   async function send(text: string, previous?: TutorMessage[]) {
     if (busy || !online || (!previous && !text.trim())) return;
@@ -164,10 +166,11 @@ function TutorChat({ context, storageKey, user, onUser, notes, onNotes, related,
         <label className="check-label"><input type="checkbox" checked={related} onChange={e => onRelated(e.target.checked)} />Find up to 3 related cards in this set after reveal</label>
         <label className="check-label"><input type="checkbox" checked={historyEnabled} onChange={e => { setHistoryEnabled(e.target.checked); saveSetting("history", String(e.target.checked)); }} />Save this conversation on this device</label>
         <p>Turning this off deletes this local thread. Use Clear conversation to delete its cloud copy too. Other saved card threads remain until deleted.</p>
-        <label className="check-label"><input type="checkbox" disabled={!historyEnabled || user === "guest"} checked={sync} onChange={e => setSync(e.target.checked)} />Also save this thread to my tutor account</label>
-        <label>Tutor service URL<input type="url" placeholder="https://tutor.example.com" value={endpoint} disabled={user !== "guest"} onChange={e => setEndpoint(e.target.value)} /></label>
-        {user === "guest" ? <><label>Personal tutor access token<input type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} /></label><button type="button" className="secondary" disabled={!online || !token.trim()} onClick={() => void connect()}>Connect securely</button></> :
-          <><p>Connected as {user}. Access token stays in memory.</p><button type="button" className="secondary" onClick={() => { controller.current?.abort(); credential = ""; identity = "guest"; onUser("guest"); }}>Disconnect</button><button type="button" className="secondary" disabled={!online || busy} onClick={() => void loadCloud()}>Load saved cloud conversation</button></>}
+        <label className="check-label"><input type="checkbox" disabled={!historyEnabled || !connected} checked={sync} onChange={e => setSync(e.target.checked)} />Also save this thread to my tutor account</label>
+        {user !== "guest" && !connected && <p>Saved local conversations for {user} remain available offline. Reconnect to ask new questions.</p>}
+        <label>Tutor service URL<input type="url" placeholder="https://tutor.example.com" value={endpoint} disabled={connected} onChange={e => setEndpoint(e.target.value)} /></label>
+        {!connected ? <><label>Personal tutor access token<input type="password" autoComplete="off" value={token} onChange={e => setToken(e.target.value)} /></label><button type="button" className="secondary" disabled={!online || !token.trim()} onClick={() => void connect()}>Connect securely</button></> :
+          <><p>Connected as {user}. Access token stays in memory.</p><button type="button" className="secondary" onClick={() => { controller.current?.abort(); credential = ""; setConnected(false); setBusy(false); }}>Disconnect</button><button type="button" className="secondary" disabled={!online || busy} onClick={() => void loadCloud()}>Load saved cloud conversation</button></>}
       </details>
       {!context.revealed && <p className="tutor-notice">Hints only until you submit or reveal. Prior answer discussions are kept separately.
         {onReveal && <button type="button" className="text-button" onClick={onReveal}>Reveal answer</button>}</p>}
