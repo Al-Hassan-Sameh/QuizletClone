@@ -1,6 +1,6 @@
 # Recall
 
-A private, offline-first flashcard and study app built with React, strict TypeScript, Vite, Tailwind CSS, Dexie (IndexedDB), Lucide icons, and a precaching PWA service worker. No accounts, backend, remote fonts, or runtime APIs.
+A private, offline-first flashcard and study app built with React, strict TypeScript, Vite, Tailwind CSS, Dexie (IndexedDB), Lucide icons, and a precaching PWA service worker. Core study works without accounts, a backend, or runtime APIs. The optional context-aware AI tutor uses a separately configured authenticated backend; see [AI tutor setup](docs/AI_TUTOR.md).
 
 ## Open on Windows with a desktop shortcut
 
@@ -99,4 +99,4 @@ Use Flashcards mode for self-assessing derivations; written-answer auto-grading 
 
 ## Scope
 
-Content stays on the device. There is no cloud synchronization, collaboration, account recovery, media attachment support, or matching game. The optional matching game is intentionally omitted. Session history retains summaries; a separate per-card review log records outcomes and scheduled intervals. Keep a backup before changing device, browser, or origin.
+Core study content stays on the device. The optional AI tutor shares the selected card context with the configured service only when you send a message, and can optionally save its conversation to your tutor service account. There is no study-library cloud synchronization, collaboration, account recovery, media attachment support, or matching game. The optional matching game is intentionally omitted. Session history retains summaries; a separate per-card review log records outcomes and scheduled intervals. Keep a backup before changing device, browser, or origin.

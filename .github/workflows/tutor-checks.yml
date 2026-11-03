@@ -1,0 +1,48 @@
+name: Study tutor checks
+on:
+  pull_request:
+    branches: [master]
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run test:tutor:server
+      - run: npm run build:pages
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+  deployment:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build backend image
+        run: docker build -f Dockerfile.tutor -t recall-tutor:ci .
+      - name: Validate deployment configuration
+        run: |
+          cp deploy/tutor.env.example .env
+          docker compose -f compose.tutor.yml config --quiet
+          docker run --rm -e TUTOR_DOMAIN=tutor.example.com -v "$PWD/deploy/Caddyfile:/etc/caddy/Caddyfile:ro" caddy:2-alpine caddy validate --config /etc/caddy/Caddyfile
+      - name: Verify container health
+        run: |
+          docker run -d --name recall-tutor-ci --read-only --tmpfs /tmp --mount type=volume,src=recall-tutor-ci-history,dst=/data --cap-drop ALL --security-opt no-new-privileges -p 127.0.0.1:18787:8787 recall-tutor:ci
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:18787/healthz; then
+              exit 0
+            fi
+            sleep 1
+          done
+          exit 1
+      - name: Clean up
+        if: always()
+        run: docker rm -f recall-tutor-ci || true

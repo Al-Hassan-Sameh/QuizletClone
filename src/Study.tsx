@@ -1,3 +1,4 @@
+import { Tutor } from "./Tutor";
 import { useState, useEffect, useRef } from "react";
 import {
   ChevronLeft,
@@ -37,6 +38,8 @@ export function Study({
   run: (a: () => Promise<unknown>, message?: string) => Promise<void>;
 }) {
   const [mode, setMode] = useState("Flashcards");
+  const [tutorReview, setTutorReview] = useState(0);
+  const [tutorRequest, setTutorRequest] = useState(0);
   const [filter, setFilter] = useState("all");
   const [membership, setMembership] = useState(s.cards.map((c) => c.id));
   const [order, setOrder] = useState(s.cards.map((c) => c.id));
@@ -166,6 +169,7 @@ export function Study({
       if (
         mode !== "Flashcards" ||
         (e.target as HTMLElement).matches("input,textarea,select") ||
+        (e.target as HTMLElement).closest(".tutor-panel") ||
         document.querySelector("dialog[open]")
       )
         return;
@@ -193,6 +197,7 @@ export function Study({
     setAnswers({});
     setIndex(0);
     setSubmitted(false);
+    setTutorReview(0);
     setFeedback(null);
     setRetries([]);
   };
@@ -274,6 +279,21 @@ export function Study({
     setBusy(false);
   };
   const q = quiz?.[index];
+  const tutorQuestion = submitted ? quiz?.[tutorReview] : q;
+  const tutorCard = mode === "Flashcards" ? card : s.cards.find(c => c.id === tutorQuestion?.cardId);
+  const tutor = tutorCard && !finished && (mode === "Flashcards" || (quiz && (mode === "Learn" || submitted))) && (
+        <Tutor set={s} card={tutorCard} question={mode === "Flashcards" ? undefined : tutorQuestion}
+          revealed={mode === "Flashcards" ? flip : submitted || feedback !== null}
+          selectedAnswer={answers[submitted ? tutorReview : index] || ""}
+          requestOpen={tutorRequest}
+          onReveal={mode === "Flashcards" ? () => setFlip(true) : !submitted && feedback === null ? () => {
+            setAnswers(a => ({ ...a, [index]: "" }));
+            setFeedback(false);
+            if (q && quiz && quiz.filter(item => item.cardId === q.cardId).length < 2)
+              setQuiz([...quiz, { ...q, options: shuffle(q.options) }]);
+          } : undefined}
+        />
+      );
   const score =
     quiz?.filter((q, i) => grade(answers[i] || "", q.answer)).length || 0;
   return (
@@ -348,6 +368,7 @@ export function Study({
               <option value="learning">Still learning</option>
               <option value="known">Known cards</option>
             </select>
+            {mode === "Flashcards" && tutor}
             <button
               className="secondary shuffle-control"
               aria-label="Shuffle cards"
@@ -634,6 +655,7 @@ export function Study({
                   <MathText text={q.prompt} />
                 </h3>
                 <p>Your answer: {answers[i] || "No answer"}</p>
+                <button type="button" className="secondary tutor-review-button" onClick={() => { setTutorReview(i); setTutorRequest(n => n + 1); }}>Discuss this question with AI</button>
                 {!grade(answers[i] || "", q.answer) && (
                   <strong>
                     Correct answer: <MathText text={q.answer} />
@@ -733,6 +755,8 @@ export function Study({
           <p className="muted">Unanswered questions count as incorrect.</p>
         </form>
       )}
+      {mode !== "Flashcards" && tutor}
+      {mode === "Test" && quiz && !submitted && <p className="muted">AI Tutor is disabled during tests. Submit your test to discuss each question in answer review.</p>}
     </div>
   );
 }

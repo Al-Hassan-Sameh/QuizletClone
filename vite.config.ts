@@ -6,6 +6,7 @@ export default defineConfig(({ mode }) => {
   const base = mode === "pages" ? "/QuizletClone/" : "/";
   return {
     base,
+    server: { proxy: { "/api/tutor": "http://127.0.0.1:8787" } },
     plugins: [
       react(),
       tailwindcss(),
