@@ -1,0 +1,10 @@
+{$TUTOR_DOMAIN} {
+    # Deliver each streamed chunk without proxy buffering.
+    reverse_proxy tutor:8787 {
+        flush_interval -1
+    }
+    header {
+        X-Content-Type-Options nosniff
+        Referrer-Policy no-referrer
+    }
+}

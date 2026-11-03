@@ -21,7 +21,7 @@ async function fixture(fn, provider) {
     method, headers: { Authorization: "Bearer " + token, "Content-Type": "application/json" },
     ...(body ? { body: JSON.stringify(body) } : {}),
   });
-  try { await fn(request); }
+  try { await fn(request, base); }
   finally { server.closeAllConnections(); await new Promise(r => server.close(r)); rmSync(dataDir, { recursive: true, force: true }); }
 }
 test("hidden answers, private notes and related answers are stripped server-side", () => {
@@ -85,5 +85,16 @@ test("rate limits an authenticated user", async () => {
       assert.equal(response.status, 200); await response.text();
     }
     assert.equal((await request("/chat", "POST", { cardRef, mode: "Explain", messages: [{ role: "user", content: "Again" }] })).status, 429);
+  }, provider);
+});
+
+test("health checks are unauthenticated and do not contact the AI provider", async () => {
+  let calls = 0;
+  async function* provider() { calls++; yield "Unexpected"; }
+  await fixture(async (_request, base) => {
+    const response = await fetch(new URL("/healthz", base));
+    assert.equal(response.status, 200);
+    assert.deepEqual(await response.json(), { status: "ok" });
+    assert.equal(calls, 0);
   }, provider);
 });

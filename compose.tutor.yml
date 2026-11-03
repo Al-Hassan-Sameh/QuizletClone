@@ -1,0 +1,53 @@
+services:
+  tutor:
+    build:
+      context: .
+      dockerfile: Dockerfile.tutor
+    restart: unless-stopped
+    init: true
+    env_file: .env
+    environment:
+      TUTOR_HOST: 0.0.0.0
+      TUTOR_PORT: "8787"
+      TUTOR_DATA_DIR: /data
+    volumes:
+      - tutor-history:/data
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: 256m
+    cpus: 1
+    pids_limit: 100
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+  proxy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      tutor:
+        condition: service_healthy
+    environment:
+      TUTOR_DOMAIN: ${TUTOR_DOMAIN:?Set TUTOR_DOMAIN in .env to your backend hostname}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - tutor-tls:/data
+      - tutor-proxy-config:/config
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+volumes:
+  tutor-history:
+  tutor-tls:
+  tutor-proxy-config:

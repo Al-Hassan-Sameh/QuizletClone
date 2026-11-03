@@ -140,6 +140,8 @@ export function createTutorServer(config = {}, provider = openAIStream) {
         res.writeHead(204, { "Access-Control-Allow-Headers": "Content-Type, Authorization", "Access-Control-Allow-Methods": "POST, PUT, GET, DELETE, OPTIONS" }); res.end(); return;
       }
       const url = new URL(req.url, "http://localhost");
+      // Liveness only: no credentials, user data, or provider calls are exposed.
+      if (url.pathname === "/healthz" && req.method === "GET") return json(res, 200, { status: "ok" });
       if (!url.pathname.startsWith("/api/tutor/")) throw new HttpError(404, "Not found.");
       limit(anonymous, req.socket.remoteAddress, 200, 60000);
       const user = userFor(req);

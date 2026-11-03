@@ -1,5 +1,7 @@
 # Context-aware AI study tutor
 
+For a containerized HTTPS backend with persistent history, see [Docker deployment](AI_TUTOR_DEPLOYMENT.md).
+
 ## Run the real integration
 
 Requires Node.js 22.12+. Study remains usable without configuring AI.
