@@ -1,0 +1,66 @@
+name: Prepare GitHub Pages release
+on:
+  push:
+    branches: [master]
+    paths:
+      - "src/**"
+      - "public/**"
+      - "index.html"
+      - "package*.json"
+      - "vite.config.ts"
+      - "tsconfig.json"
+      - ".github/workflows/build-static-release.yml"
+  pull_request:
+    branches: [master]
+    paths:
+      - ".github/workflows/build-static-release.yml"
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: prepare-static-release
+  cancel-in-progress: false
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:pages
+  prepare:
+    if: github.ref == 'refs/heads/master' && github.event_name != 'pull_request'
+    needs: validate
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:pages
+      - name: Prepare release branch without changing the live site
+        run: |
+          git fetch origin gh-pages
+          git worktree add --detach "$RUNNER_TEMP/pages-release" origin/gh-pages
+          if test -f "$RUNNER_TEMP/pages-release/CNAME"; then
+            cp "$RUNNER_TEMP/pages-release/CNAME" "$RUNNER_TEMP/pages-cname"
+          fi
+          git -C "$RUNNER_TEMP/pages-release" rm -r --ignore-unmatch .
+          cp -R dist/. "$RUNNER_TEMP/pages-release/"
+          if test -f "$RUNNER_TEMP/pages-cname"; then
+            cp "$RUNNER_TEMP/pages-cname" "$RUNNER_TEMP/pages-release/CNAME"
+          fi
+          git -C "$RUNNER_TEMP/pages-release" config user.name "github-actions[bot]"
+          git -C "$RUNNER_TEMP/pages-release" config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C "$RUNNER_TEMP/pages-release" add --all
+          git -C "$RUNNER_TEMP/pages-release" commit --allow-empty -m "Build static app from $GITHUB_SHA"
+          git -C "$RUNNER_TEMP/pages-release" push origin "HEAD:refs/heads/pages-build/$GITHUB_SHA"
