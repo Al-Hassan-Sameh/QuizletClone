@@ -23,6 +23,7 @@ test("shares active context, preserves per-card history, discards delayed replie
   await study(page);
   const sent: { term: string; answer?: string; options: string[] }[] = [];
   let requests = 0;
+  let delayedFinished = false;
   await page.route("**/api/tutor/session", route => route.fulfill({ json: { user: "student" } }));
   await page.route("**/api/tutor/cards", route => {
     sent.push(route.request().postDataJSON().context);
@@ -32,6 +33,7 @@ test("shares active context, preserves per-card history, discards delayed replie
     requests++;
     if (requests === 2) await new Promise(resolve => setTimeout(resolve, 800));
     await route.fulfill({ contentType: "application/x-ndjson", body: JSON.stringify({ delta: requests === 1 ? "Saved first-card guidance." : "DELAYED SECOND CARD RESPONSE" }) + "\n" + JSON.stringify({ done: true }) + "\n" }).catch(() => {});
+    if (requests === 2) delayedFinished = true;
   });
   await connect(page);
   await page.getByRole("button", { name: "Give me a hint", exact: true }).click();
@@ -44,6 +46,7 @@ test("shares active context, preserves per-card history, discards delayed replie
   await expect.poll(() => sent.length).toBe(2);
   await page.getByRole("button", { name: "Previous card", exact: true }).click();
   await expect(page.getByRole("log")).toContainText("Saved first-card guidance.");
+  await expect.poll(() => delayedFinished).toBe(true);
   await expect(page.getByRole("log")).not.toContainText("DELAYED SECOND CARD RESPONSE");
   await page.getByRole("button", { name: "Close tutor", exact: true }).click();
   await page.reload();
@@ -78,4 +81,19 @@ test("protects active MCQs and disables the tutor until test submission", async 
   await page.getByRole("button", { name: "Submit test", exact: true }).click();
   await page.getByRole("button", { name: "Discuss this question with AI", exact: true }).first().click();
   await expect(page.locator(".tutor-panel")).toBeVisible();
+});
+
+test("mobile tutor uses a dismissible full-screen dialog without hiding study controls afterward", async ({ page }) => {
+  await study(page);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.getByRole("button", { name: /Ask AI Tutor/ }).click();
+  const dialog = page.getByRole("dialog", { name: "AI study tutor" });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toHaveAttribute("aria-modal", "true");
+  await expect(page.getByLabel("Ask about this card")).toBeFocused();
+  await page.getByLabel("Ask about this card").fill("A draft question");
+  await page.keyboard.press("Escape");
+  await expect(dialog).toHaveCount(0);
+  await page.getByRole("button", { name: "Next card", exact: true }).click();
+  await expect(page.locator(".card-face").first()).toContainText("Ancient temple");
 });

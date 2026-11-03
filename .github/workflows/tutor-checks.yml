@@ -1,7 +1,5 @@
 name: Study tutor checks
 on:
-  push:
-    branches: [codex/context-aware-study-tutor]
   pull_request:
     branches: [master]
 permissions:
