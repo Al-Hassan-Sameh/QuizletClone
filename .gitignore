@@ -5,3 +5,8 @@ test-results/
 *.log
 
 *.tsbuildinfo
+
+.env
+.env.*
+!.env.example
+.tutor-data/
